@@ -20,6 +20,8 @@ use crate::sensors::{
 use chrono::Utc;
 use clap::ArgMatches;
 use std::collections::HashMap;
+use k8s_sync::ListOptional;
+use std::env;
 use std::fmt;
 use std::time::Duration;
 use utils::get_scaphandre_version;
@@ -633,7 +635,13 @@ impl MetricGenerator {
     fn gen_kubernetes_pods_basic_metadata(&mut self) {
         if self.watch_kubernetes {
             if let Some(kubernetes) = self.kubernetes_client.as_mut() {
-                if let Ok(pods_result) = kubernetes.list_pods("".to_string()) {
+                let node_name = env::var("KUBERNETES_NODE_NAME").unwrap_or_default();
+                let selector = format!("spec.nodeName={}", node_name);
+                let mut list_options = ListOptional { ..Default::default() };
+                if node_name != "" {
+                    list_options.field_selector = Some(&selector);
+                }
+                if let Ok(pods_result) = kubernetes.list_pods("".to_string(), list_options) {
                     self.pods = pods_result;
                     debug!("Found {} pods", &self.pods.len());
                 } else {
