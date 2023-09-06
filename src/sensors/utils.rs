@@ -419,7 +419,7 @@ impl ProcessTracker {
         #[cfg(feature = "containers")]
         let regex_cgroup_docker = Regex::new(r"^.*/docker.*$").unwrap();
         #[cfg(feature = "containers")]
-        let regex_cgroup_kubernetes = Regex::new(r"^/kubepods.*$").unwrap();
+        let regex_cgroup_kubernetes = Regex::new(r"^.*/kubepods.*$").unwrap();
         #[cfg(feature = "containers")]
         let regex_cgroup_containerd = Regex::new("/system.slice/containerd.service/.*$").unwrap();
 
@@ -585,7 +585,7 @@ impl ProcessTracker {
             container_id = container_id.strip_suffix(".scope").unwrap().to_string();
         }
         if container_id.contains("cri-containerd") {
-            container_id = container_id.split(':').last().unwrap().to_string();
+            container_id = container_id.split([':', '-']).last().unwrap().to_string();
         }
         Ok(container_id)
     }
