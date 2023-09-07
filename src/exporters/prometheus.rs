@@ -55,6 +55,7 @@ impl Exporter for PrometheusExporter {
             parameters.value_of("suffix").unwrap().to_string(),
             parameters.is_present("qemu"),
             parameters.is_present("containers"),
+            parameters.is_present("pods_only"),
             get_hostname(),
         );
     }
@@ -103,6 +104,13 @@ impl Exporter for PrometheusExporter {
             .takes_value(false);
         options.push(arg);
 
+        let arg = Arg::with_name("pods_only")
+            .help("Monitor only containers running in kubernetes pods")
+            .long("pods_only")
+            .required(false)
+            .takes_value(false);
+        options.push(arg);
+
         let arg = Arg::with_name("kubernetes_host")
             .help("FQDN of the kubernetes API server")
             .long("kubernetes-host")
@@ -145,6 +153,7 @@ async fn runner(
     suffix: String,
     qemu: bool,
     watch_containers: bool,
+    watch_pods_only: bool,
     hostname: String,
 ) {
     if let Ok(addr) = address.parse::<IpAddr>() {
@@ -158,6 +167,7 @@ async fn runner(
                     hostname.clone(),
                     qemu,
                     watch_containers,
+                    watch_pods_only,
                 )),
             };
             let context = Arc::new(power_metrics);

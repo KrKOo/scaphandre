@@ -125,6 +125,7 @@ impl StdoutExporter {
             utils::get_hostname(),
             parameters.is_present("qemu"),
             parameters.is_present("containers"),
+            parameters.is_present("pods_only")
         );
 
         println!("Measurement step is: {step_duration}s");

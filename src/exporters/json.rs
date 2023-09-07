@@ -76,6 +76,13 @@ impl Exporter for JSONExporter {
             .takes_value(false);
         options.push(arg);
 
+        let arg = Arg::with_name("pods_only")
+            .help("Monitor only containers running in kubernetes pods")
+            .long("pods_only")
+            .required(false)
+            .takes_value(false);
+        options.push(arg);
+
         // the resulting labels of this option are not yet used by this exporter, activate this option once we display something interesting about it
         //let arg = Arg::with_name("qemu")
         //    .help("Apply labels to metrics of processes looking like a Qemu/KVM virtual machine")
@@ -146,6 +153,7 @@ impl JSONExporter {
             utils::get_hostname(),
             parameters.is_present("qemu"),
             parameters.is_present("containers"),
+            parameters.is_present("pods_only")
         );
 
         // We have a default value of 2s so it is safe to unwrap the option
