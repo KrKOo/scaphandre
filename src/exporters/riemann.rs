@@ -144,6 +144,7 @@ impl Exporter for RiemannExporter {
             hostname,
             parameters.is_present("qemu"),
             parameters.is_present("containers"),
+            parameters.is_present("pods_only"),
         );
 
         loop {

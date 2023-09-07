@@ -126,6 +126,9 @@ struct MetricGenerator {
     /// Tells MetricGenerator if it has to watch for containers.
     #[cfg(feature = "containers")]
     watch_containers: bool,
+    /// Tells MetricGenerator if it has to watch only for containers.
+    #[cfg(feature = "containers")]
+    watch_pods_only: bool,
     ///
     #[cfg(feature = "containers")]
     containers_last_check: String,
@@ -166,6 +169,7 @@ impl MetricGenerator {
         hostname: String,
         _qemu: bool,
         _watch_containers: bool,
+        _watch_pods_only: bool,
     ) -> MetricGenerator {
         let data = Vec::new();
         #[cfg(feature = "containers")]
@@ -207,6 +211,7 @@ impl MetricGenerator {
                 docker_version,
                 docker_client,
                 watch_containers: _watch_containers,
+                watch_pods_only: _watch_pods_only,
                 watch_docker: true,
                 kubernetes_client,
                 watch_kubernetes: true,
@@ -734,9 +739,21 @@ impl MetricGenerator {
                     );
 
                 if !container_data.is_empty() {
+                    let container_scheduler = container_data.get("container_scheduler");
+
+                    if self.watch_pods_only && match container_scheduler {
+                        Some(scheduler) => scheduler != "kubernetes",
+                        None => true,
+                    } {
+                        continue;
+                    }
+
                     for (k, v) in container_data.iter() {
                         attributes.insert(String::from(k), String::from(v));
                     }
+                }
+                else if self.watch_pods_only {
+                    continue;
                 }
             }
 
@@ -775,26 +792,36 @@ impl MetricGenerator {
 
     /// Generate all metrics provided by Scaphandre agent.
     fn gen_all_metrics(&mut self) {
-        info!(
-            "{}: Get self metrics",
-            Utc::now().format("%Y-%m-%dT%H:%M:%S")
-        );
-        self.gen_self_metrics();
-        info!(
-            "{}: Get host metrics",
-            Utc::now().format("%Y-%m-%dT%H:%M:%S")
-        );
-        self.gen_host_metrics();
-        info!(
-            "{}: Get socket metrics",
-            Utc::now().format("%Y-%m-%dT%H:%M:%S")
-        );
-        self.gen_socket_metrics();
-        info!(
-            "{}: Get system metrics",
-            Utc::now().format("%Y-%m-%dT%H:%M:%S")
-        );
-        self.gen_system_metrics();
+        let mut gen_non_process_metrics = true;
+
+        #[cfg(feature = "containers")]
+        if self.watch_pods_only {
+            gen_non_process_metrics = false;
+        }
+
+        if gen_non_process_metrics {
+            info!(
+                "{}: Get self metrics",
+                Utc::now().format("%Y-%m-%dT%H:%M:%S")
+            );
+            self.gen_self_metrics();
+            info!(
+                "{}: Get host metrics",
+                Utc::now().format("%Y-%m-%dT%H:%M:%S")
+            );
+            self.gen_host_metrics();
+            info!(
+                "{}: Get socket metrics",
+                Utc::now().format("%Y-%m-%dT%H:%M:%S")
+            );
+            self.gen_socket_metrics();
+            info!(
+                "{}: Get system metrics",
+                Utc::now().format("%Y-%m-%dT%H:%M:%S")
+            );
+            self.gen_system_metrics();
+        }   
+
         info!(
             "{}: Get process metrics",
             Utc::now().format("%Y-%m-%dT%H:%M:%S")
